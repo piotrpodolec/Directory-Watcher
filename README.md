@@ -1,7 +1,7 @@
 # Directory-Watcher
 
-Mini project made according to the description someone posted at the Discord.
-It was an interview task for Java Junior Developer position.
+Mini project made according to the description someone posted on the Discord.
+It was an interview task for The Java Junior Developer position.
 ### It is the original description in polish: 
 
 > Zadanie - aplikacja do segregowania plików (1-2h)
