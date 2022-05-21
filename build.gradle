@@ -1,0 +1,9 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+mainClassName = 'com.pp.Main'
+
+jar {
+  archiveBaseName = 'Directory-Watcher'
+  archiveVersion = '1.0.0'
+}
