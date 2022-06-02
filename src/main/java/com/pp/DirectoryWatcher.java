@@ -48,7 +48,6 @@ public class DirectoryWatcher {
             if ((key = watchService.take()) != null) {
                 for (WatchEvent<?> event : key.pollEvents()) {
                     moveFile(event.context().toString());
-                    increaseFileCount();
                 }
                 key.reset();
             } else {
@@ -59,12 +58,23 @@ public class DirectoryWatcher {
 
     private void moveFile(String fileName) throws IOException {
         Path path = Paths.get(HOME + "\\" + fileName);
-        BasicFileAttributes fileAttributes = Files.readAttributes(path.toAbsolutePath(), BasicFileAttributes.class);
-        if (fileAttributes.creationTime().to(TimeUnit.HOURS) % 2 == 0) {
+
+        if (fileName.endsWith(".xml")) {
             Files.move(path, Paths.get(DEV + "\\" + fileName));
-        } else {
-            Files.move(path, Paths.get(TEST + "\\" + fileName));
+            increaseFileCount();
+            return;
         }
+
+        if (fileName.endsWith(".jar")) {
+            BasicFileAttributes fileAttributes = Files.readAttributes(path.toAbsolutePath(), BasicFileAttributes.class);
+            if (fileAttributes.creationTime().to(TimeUnit.HOURS) % 2 == 0) {
+                Files.move(path, Paths.get(DEV + "\\" + fileName));
+            } else {
+                Files.move(path, Paths.get(TEST + "\\" + fileName));
+            }
+            increaseFileCount();
+        }
+
     }
 
     private void increaseFileCount() {
