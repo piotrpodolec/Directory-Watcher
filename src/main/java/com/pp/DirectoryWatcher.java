@@ -74,7 +74,6 @@ public class DirectoryWatcher {
             }
             increaseFileCount();
         }
-
     }
 
     private void increaseFileCount() {
@@ -91,5 +90,4 @@ public class DirectoryWatcher {
             e.printStackTrace();
         }
     }
-
 }
