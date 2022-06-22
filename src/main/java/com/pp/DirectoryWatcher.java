@@ -5,13 +5,21 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class DirectoryWatcher {
-    private final String HOME = "HOME";
-    private final String DEV = "DEV";
-    private final String TEST = "TEST";
-    private final String COUNT_FILE_PATH = "HOME/count.txt";
+    final static Logger logger = LogManager.getLogger(Main.class);
+    private final String HOME = "home";
+    private final String DEV = "dev";
+    private final String TEST = "test";
+    private final String JAR_EXTENSION = ".jar";
+    private final String XML_EXTENSION = ".xml";
+    private final String COUNT_FILE_PATH = HOME + File.separator +"count.txt";
     private final int CHECKING_INTERVAL = 1000;
+    private final ReentrantLock lock = new ReentrantLock();
 
     public DirectoryWatcher() throws IOException {
         createDirectory(HOME);
@@ -28,14 +36,12 @@ public class DirectoryWatcher {
     }
 
     private void createCountingFile() throws IOException {
-        Path path = Paths.get(COUNT_FILE_PATH);
-        try{
-            Files.createFile(path);
+        File countFile = new File(COUNT_FILE_PATH);
+        countFile.createNewFile();
+        if (countFile.length() == 0) {
+            Path path = Paths.get(COUNT_FILE_PATH);
             Files.writeString(path, "0");
-        } catch (FileAlreadyExistsException e) {
-            System.out.println(COUNT_FILE_PATH + " already exists.");
         }
-
     }
 
     public void watchForFilesInHome() throws IOException, InterruptedException {
@@ -57,20 +63,20 @@ public class DirectoryWatcher {
     }
 
     private void moveFile(String fileName) throws IOException {
-        Path path = Paths.get(HOME + "\\" + fileName);
+        Path path = Paths.get(HOME, fileName);
 
-        if (fileName.endsWith(".xml")) {
-            Files.move(path, Paths.get(DEV + "\\" + fileName));
+        if (fileName.endsWith(XML_EXTENSION)) {
+            Files.move(path, Paths.get(DEV, fileName));
             increaseFileCount();
             return;
         }
 
-        if (fileName.endsWith(".jar")) {
+        if (fileName.endsWith(JAR_EXTENSION)) {
             BasicFileAttributes fileAttributes = Files.readAttributes(path.toAbsolutePath(), BasicFileAttributes.class);
             if (fileAttributes.creationTime().to(TimeUnit.HOURS) % 2 == 0) {
-                Files.move(path, Paths.get(DEV + "\\" + fileName));
+                Files.move(path, Paths.get(DEV, fileName));
             } else {
-                Files.move(path, Paths.get(TEST + "\\" + fileName));
+                Files.move(path, Paths.get(TEST, fileName));
             }
             increaseFileCount();
         }
@@ -78,16 +84,17 @@ public class DirectoryWatcher {
 
     private void increaseFileCount() {
         Path path = Paths.get(COUNT_FILE_PATH);
+        lock.lock();
         try {
             int count = Integer.parseInt(Files.readString(path));
             count++;
             Files.writeString(path, Integer.toString(count));
         } catch (IOException e) {
-            System.err.println("Cannot read file: " + COUNT_FILE_PATH);
-            e.printStackTrace();
+            logger.error("Cannot read file: " + COUNT_FILE_PATH, e);
         } catch (NumberFormatException e) {
-            System.err.println("Content of this file cannot be parsed to number: " + COUNT_FILE_PATH);
-            e.printStackTrace();
+            logger.error("Content of this file cannot be parsed to number: " + COUNT_FILE_PATH, e);
+        } finally {
+            lock.unlock();
         }
     }
 }
